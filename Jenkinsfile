@@ -28,7 +28,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     bat '''
-                    docker logout
+                    docker logout || exit /b 0
                     echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
                     docker push %IMAGE_NAME%:%IMAGE_TAG%
                     '''

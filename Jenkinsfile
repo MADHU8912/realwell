@@ -21,6 +21,13 @@ pipeline {
             }
         }
 
+        stage('Check Docker') {
+            steps {
+                bat 'docker --version'
+                bat 'docker images'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 bat 'docker build -t %IMAGE_NAME% .'

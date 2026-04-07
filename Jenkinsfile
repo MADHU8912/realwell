@@ -20,19 +20,24 @@ pipeline {
             }
         }
 
-        stage('Docker Login and Push') {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    bat '''
-                    docker logout || exit /b 0
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                    docker push %IMAGE_NAME%:%IMAGE_TAG%
+                    powershell '''
+                        docker logout | Out-Null
+                        $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin
                     '''
                 }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
             }
         }
 

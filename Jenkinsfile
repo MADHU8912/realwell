@@ -2,75 +2,33 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'nikhilabba12/realwell:latest'
-        CONTAINER_NAME = 'realwell-container'
+        IMAGE_NAME = 'nikhilabba12/realwell'
+        IMAGE_TAG = 'latest'
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                git branch: 'main',
-                    credentialsId: 'github-creds',
-                    url: 'https://github.com/MADHU8912/realwell.git'
+                checkout scm
             }
         }
 
-        stage('Check Files') {
+        stage('Build Image') {
             steps {
-                bat 'dir'
+                script {
+                    dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                }
             }
         }
 
-        stage('Check Docker') {
+        stage('Push Image') {
             steps {
-                bat 'docker --version'
-                bat 'docker images'
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
+                        dockerImage.push("${IMAGE_TAG}")
+                    }
+                }
             }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                bat 'docker build -t %IMAGE_NAME% .'
-            }
-        }
-
-        stage('Docker Login') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-        }
-    }
-}
-
-        stage('Push Docker Image') {
-            steps {
-                bat 'docker push %IMAGE_NAME%'
-            }
-        }
-
-        stage('Pull Docker Image') {
-            steps {
-                bat 'docker pull %IMAGE_NAME%'
-            }
-        }
-
-        stage('Run Container') {
-            steps {
-                bat 'docker rm -f %CONTAINER_NAME% || exit /b 0'
-                bat 'docker run -d --name %CONTAINER_NAME% %IMAGE_NAME%'
-            }
-        }
-    }
-
-    post {
-        always {
-            bat 'docker logout || exit /b 0'
-        }
-        success {
-            echo 'Realwell pipeline completed successfully'
-        }
-        failure {
-            echo 'Realwell pipeline failed'
         }
     }
 }
